@@ -150,21 +150,22 @@ class Public_State_Iterator:
                 pre_yield = list(zip(questions, responses))
                 for q, player_num in product(all_questions, range(1, len(self.hidden_state))):
                     q = Question(player_num, *q)
-                    for response in q.possible_answers(self.hidden_state):
-                        yield tuple(pre_yield + [(q, response)])
+                    if q not in questions:
+                        for response in q.possible_answers(self.hidden_state):
+                            yield tuple(pre_yield + [(q, response)])
 
-def get_marginal_question_dict(d, q):
+def get_marginal_question_dict(d, q, q_num):
     return {
         key : val
         for key,val in d.items()
-        if key[0][0] == q
+        if key[q_num-1][0] == q
     }
 
-def get_marginal_response_dict(d, q, r):
+def get_marginal_response_dict(d, q, r, q_num):
     return {
         key : val
         for key,val in d.items()
-        if key[0] == (q, r)
+        if key[q_num-1] == (q, r)
     }
 
 def get_distribution(d):
@@ -181,7 +182,7 @@ players = [
     Player("QT"),
     Player("PT"),
     Player("TM"),
-    Player("TG")
+    # Player("TG")
 ]
 
 public_states_by_hidden_state = {
@@ -201,21 +202,39 @@ hidden_states_by_public_state = {
     ]
     for public_state in public_states
 }
-x=1
-# all_questions = []
-# for player_num in range(1, len(players)):
-#     all_questions.append(Question(player_num, 1))
-#     all_questions.extend(
-#         Question(player_num, 2, they) for they in range(len(players))
-#     )
 
-# marg = hidden_states_by_public_state
-#
-# for i in range(len(players) + 1):
-#     for q in all_questions
+all_questions = []
+for player_num in range(1, len(players)):
+    all_questions.append(Question(player_num, 1))
+    all_questions.extend(
+        Question(player_num, 2, they) for they in range(len(players))
+    )
 
-# for q in all_questions:
-#     marg = get_marginal_question_dict(hidden_states_by_public_state, q)
-#     distro = get_distribution(marg)
-#     print(get_entropy(distro), q)
+marg = hidden_states_by_public_state
 
+for i in range(len(players)):
+    marginals = {
+        q : get_marginal_question_dict(marg, q, i+1)
+        for q in all_questions
+    }
+    distros = {
+        q : get_distribution(d)
+        for q, d in marginals.items()
+    }
+    entropies = {
+        q : get_entropy(distro)
+        for q, distro in distros.items()
+    }
+    nonzero_entropies = {
+        q : e
+        for q,e in entropies.items()
+        if e != 0
+    }
+    best_q = min(nonzero_entropies.items(), key = lambda t:t[1])
+    print(best_q)
+    r = input("Response? ")
+    try:
+        r = int(r)
+    except ValueError:
+        r = Player(r)
+    marg = get_marginal_response_dict(marg,best_q[0], r, i+1)
