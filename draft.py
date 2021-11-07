@@ -129,11 +129,22 @@ class Public_State_Iterator:
         for seq in question_space:
             possibility_space = []
             questions = []
-            for _player_num in range(len(self.hidden_state)-1):
-                q = Question(_player_num+1, *seq[_player_num])
-                questions.append(q)
-                possibilities = q.possible_answers(self.hidden_state)
-                possibility_space.append(possibilities)
+            # for _player_num in range(len(self.hidden_state)-1):
+            #     q = Question(_player_num+1, *seq[_player_num])
+            #     questions.append(q)
+            #     possibilities = q.possible_answers(self.hidden_state)
+            #     possibility_space.append(possibilities)
+            q = Question(1, *seq[0])
+            questions.append(q)
+            possibilities = q.possible_answers(self.hidden_state)
+            possibility_space.append(possibilities)
+            for perm in permutations(range(1,len(self.hidden_state)-1)):
+                for _player_num in perm:
+                    q = Question(_player_num+1, *seq[_player_num])
+                    questions.append(q)
+                    possibilities = q.possible_answers(self.hidden_state)
+                    possibility_space.append(possibilities)
+
 
             for responses in product(*tuple(possibility_space)):
                 pre_yield = list(zip(questions, responses))
@@ -169,7 +180,8 @@ def get_entropy(distro):
 players = [
     Player("QT"),
     Player("PT"),
-    Player("TM")
+    Player("TM"),
+    Player("TG")
 ]
 
 public_states_by_hidden_state = {
@@ -189,14 +201,21 @@ hidden_states_by_public_state = {
     ]
     for public_state in public_states
 }
+x=1
+# all_questions = []
+# for player_num in range(1, len(players)):
+#     all_questions.append(Question(player_num, 1))
+#     all_questions.extend(
+#         Question(player_num, 2, they) for they in range(len(players))
+#     )
 
-all_questions = [(1,)]
-all_questions.extend([
-    (2,i) for i in range(len(players))
-])
+# marg = hidden_states_by_public_state
+#
+# for i in range(len(players) + 1):
+#     for q in all_questions
 
-for q in all_questions:
-    q = Question(1,*q)
-    marg = get_marginal_question_dict(hidden_states_by_public_state, q)
-    distro = get_distribution(marg)
-    print(get_entropy(distro), q)
+# for q in all_questions:
+#     marg = get_marginal_question_dict(hidden_states_by_public_state, q)
+#     distro = get_distribution(marg)
+#     print(get_entropy(distro), q)
+
